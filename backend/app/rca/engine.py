@@ -159,6 +159,8 @@ class RootCauseEngine:
         def causal_bucket(f: Dict[str, Any]) -> str:
             rule = f.get("rule_id") or ""
             cat = f.get("category") or ""
+            if rule.startswith("PY_LOGICAL_") or "Logical" in cat:
+                return "algorithmic_logic_defect"
             if rule in ("PY_ASYNC_BLOCKING_SLEEP", "PY_ASYNC_BLOCKING_HTTP", "JS_BLOCKING_FS") or "Event Loop" in cat:
                 return "event_loop_blocking"
             if rule in ("PY_UNAWAITED_COROUTINE", "PY_UNAWAITED_COROUTINE_RETURN") or "Coroutine" in cat:
@@ -436,6 +438,35 @@ class RootCauseEngine:
                     "recommended_actions_summary": "Resolve syntax errors or add explicit zero/input validation guards before division.",
                     "missing_evidence": "Runtime execution traces confirming whether zero values can actually be supplied by callers.",
                     "alternative_explanations": "Callers or database constraints may guarantee non-zero denominators outside the inspected function." if not is_deterministic else "None for syntax/literal zero defects.",
+                })
+
+            elif bucket == "algorithmic_logic_defect":
+                is_confirmed = any(f.get("is_confirmed", False) for f in b_findings)
+                conf = "High" if is_confirmed else "Medium"
+                score = 0.88 if is_confirmed else 0.70
+                ev_cat = EvidenceCategory.RUNTIME if is_confirmed else EvidenceCategory.STATIC_CODE
+                cause_type = "Confirmed Algorithmic Logic Defect" if is_confirmed else "Suspected Algorithmic Logic Defect"
+                hypotheses.append({
+                    "title": f"Algorithmic Logic & Calculation Defects in {base_file}",
+                    "description": (
+                        f"Analysis and test case verification of {base_file} ({lines_str}) detected "
+                        f"{', '.join(sorted({f['title'] for f in b_findings}))}. "
+                        "The program compiles and executes without exceptions but produces logically incorrect output values "
+                        "(e.g. incorrect mathematical calculations, inverted comparison operators, or inverted threshold conditions)."
+                    ),
+                    "confidence": conf,
+                    "confidence_score": score,
+                    "evidence_category": ev_cat,
+                    "cause_type": cause_type,
+                    "affected_files": [f_path],
+                    "affected_functions": fns,
+                    "related_finding_ids": f_ids,
+                    "evidence_summary": f"{'Automated test execution confirmed' if is_confirmed else 'Semantic AST analysis detected'} logic defects at {f_path} ({lines_str}).",
+                    "ranking_rationale": "High priority: code executes cleanly with exit code 0 but silently corrupts calculations and decision intelligence outputs.",
+                    "consequences": "Produces wrong calculation averages, inverted maximum/topper selections, and inaccurate counter aggregations.",
+                    "recommended_actions_summary": "Apply verified algorithmic code corrections to fix calculation denominators, invert comparison operators, and adjust boundary thresholds.",
+                    "missing_evidence": None if is_confirmed else "Additional test case specifications or assertion baselines.",
+                    "alternative_explanations": "If non-standard formula or inverted ranking was intentionally desired by domain requirements.",
                 })
 
             elif bucket in ("network_resiliency", "error_suppression", "general_static_defect"):

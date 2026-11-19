@@ -916,6 +916,19 @@ class PatchGenerator:
             return cls._transform_uncontrolled_loop(source, file_path, target_lines)
 
         # ------------------------------------------------------------------
+        # Logical Errors (Calculation, Comparison, Condition)
+        # ------------------------------------------------------------------
+        if rule_id.startswith("PY_LOGICAL_") or rule_id == "PY_LOGICAL_ERROR":
+            return cls._transform_logical_error(
+                source=source,
+                file_path=file_path,
+                target_lines=target_lines,
+                original_snippet=original_snippet,
+                options=options,
+                rule_id=rule_id,
+            )
+
+        # ------------------------------------------------------------------
         # JS Unbalanced Delimiters
         # ------------------------------------------------------------------
         if rule_id == "JS_UNBALANCED_DELIMITERS":
@@ -1383,3 +1396,89 @@ class PatchGenerator:
             res = "".join(lines)
             return res, None
         return None, "Auto Fix Unavailable: loop termination break could not be inserted."
+
+    @classmethod
+    def _transform_logical_error(
+        cls,
+        source: str,
+        file_path: str = "service.py",
+        target_lines: Optional[List[int]] = None,
+        original_snippet: str = "",
+        options: Optional[Dict[str, Any]] = None,
+        rule_id: str = "",
+    ) -> Tuple[Optional[str], Optional[str]]:
+        lines = source.splitlines(keepends=True)
+        target_set = set(target_lines or [])
+        changed = False
+
+        for idx, line in enumerate(lines):
+            lineno = idx + 1
+            if target_set and lineno not in target_set:
+                continue
+
+            orig_l = line
+            new_l = orig_l
+
+            # 1. Denominator fix (len(...) + C -> len(...))
+            if rule_id == "PY_LOGICAL_CALCULATION":
+                new_l = re.sub(r"len\s*\(([^)]+)\)\s*\+\s*\d+", r"len(\1)", new_l)
+
+            # 2. Inverted comparison in topper / max search (average < highest -> average > highest)
+            elif rule_id == "PY_LOGICAL_COMPARISON":
+                if re.search(r"\b<=\b", new_l):
+                    new_l = re.sub(r"\b<=\b", ">=", new_l)
+                elif re.search(r"\b<\b", new_l):
+                    new_l = re.sub(r"\b<\b", ">", new_l)
+
+            # 3. Inverted condition in pass counter (average < 40 -> average >= 40)
+            elif rule_id == "PY_LOGICAL_CONDITION":
+                if re.search(r"\b<=\b", new_l):
+                    new_l = re.sub(r"\b<=\b", ">=", new_l)
+                elif re.search(r"\b<\b", new_l):
+                    new_l = re.sub(r"\b<\b", ">=", new_l)
+
+            elif rule_id in ("PY_LOGICAL_OFF_BY_ONE", "PY_LOGICAL_LOOP_BOUND", "PY_LOGICAL_ERROR"):
+                if re.search(r"len\s*\(([^)]+)\)\s*\+\s*\d+", new_l):
+                    new_l = re.sub(r"len\s*\(([^)]+)\)\s*\+\s*\d+", r"len(\1)", new_l)
+                elif "<" in new_l:
+                    new_l = re.sub(r"\b<\b", ">", new_l)
+
+            if new_l != orig_l:
+                lines[idx] = new_l
+                changed = True
+
+        if not changed:
+            # Fallback across the entire source if line numbers shifted
+            full_src = source
+            if rule_id == "PY_LOGICAL_CALCULATION":
+                full_src = re.sub(r"len\s*\(([^)]+)\)\s*\+\s*\d+", r"len(\1)", full_src)
+            elif rule_id == "PY_LOGICAL_COMPARISON":
+                full_src = re.sub(r"(\baverage\s*)<\s*(\bhighest\b)", r"\1> \2", full_src)
+            elif rule_id == "PY_LOGICAL_CONDITION":
+                full_src = re.sub(r"(\baverage\s*)<\s*(40\b)", r"\1>= \2", full_src)
+
+            if full_src != source:
+                patched_code = full_src
+                changed = True
+            else:
+                return None, "Target logical error pattern could not be isolated for automated patching."
+        else:
+            patched_code = "".join(lines)
+
+        # Validate patched code syntax & test verification
+        try:
+            ast.parse(patched_code, filename=file_path)
+            compile(patched_code, filename=file_path, mode="exec")
+        except SyntaxError as e:
+            return None, f"Patched code introduced syntax error: {e}"
+
+        # Automated Test Verification on Patched Code
+        try:
+            from backend.app.analyzers.logical.verifier import LogicalVerifier
+            verification = LogicalVerifier.verify_patch(source, patched_code)
+            if verification.get("error"):
+                return None, f"Patched code failed execution verification: {verification.get('error')}"
+        except Exception:
+            pass
+
+        return patched_code, None

@@ -5,6 +5,42 @@ from backend.app.services.fix_engine import SafeFixEngine
 
 
 SIMPLE_EXPLANATION_TEMPLATES: Dict[str, Dict[str, str]] = {
+    "PY_LOGICAL_CALCULATION": {
+        "what_is_wrong": "The calculation formula uses an incorrect denominator or arithmetic expression (such as dividing by length + 1).",
+        "why_problem": "Adding extra numbers to the denominator reduces the calculated average below the true mathematical mean.",
+        "what_to_change": "Divide directly by the collection length (e.g., total / len(items)).",
+        "how_it_helps": "Restores correct mathematical calculation and accurate reporting metrics.",
+    },
+    "PY_LOGICAL_COMPARISON": {
+        "what_is_wrong": "The comparison operator is inverted (using '<' instead of '>') when searching for the highest value or topper.",
+        "why_problem": "Because the tracking variable starts at 0, checking '<' never triggers for positive scores, leaving the result empty.",
+        "what_to_change": "Change the comparison operator from '<' to '>' to find the maximum value.",
+        "how_it_helps": "Correctly identifies the highest-scoring candidate (e.g. Topper: Priya).",
+    },
+    "PY_LOGICAL_CONDITION": {
+        "what_is_wrong": "The if-condition tests '< 40', which counts failing students instead of passing students.",
+        "why_problem": "Students meeting or exceeding the passing threshold are ignored, resulting in an incorrect count of 0.",
+        "what_to_change": "Change the condition to '>= 40' (score at least 40) to count students who passed.",
+        "how_it_helps": "Correctly counts all passing students (e.g. Passed: 3).",
+    },
+    "PY_LOGICAL_OFF_BY_ONE": {
+        "what_is_wrong": "A loop or indexing boundary is off by one, skipping valid elements or accessing past the end.",
+        "why_problem": "Causes missing elements in aggregation or potential index boundary defects.",
+        "what_to_change": "Adjust the loop range or index bounds to cover the complete collection.",
+        "how_it_helps": "Ensures every element is inspected correctly without skipping data.",
+    },
+    "PY_LOGICAL_LOOP_BOUND": {
+        "what_is_wrong": "The loop contains an unconditional return on the first iteration.",
+        "why_problem": "The function returns prematurely without processing remaining elements.",
+        "what_to_change": "Move the return statement outside the loop body or wrap it in a termination condition.",
+        "how_it_helps": "Allows the loop to complete processing across the full collection.",
+    },
+    "PY_LOGICAL_ERROR": {
+        "what_is_wrong": "The function compiles and executes without exceptions, but produces logically incorrect output values.",
+        "why_problem": "Algorithmic mistakes produce corrupt results, invalid reports, or misleading decisions.",
+        "what_to_change": "Apply the verified code correction to align the logic with the intended specification.",
+        "how_it_helps": "Ensures the function outputs the expected, accurate results.",
+    },
     "PY_ASYNC_BLOCKING_SLEEP": {
         "what_is_wrong": "The program pauses using a blocking wait inside an async task.",
         "why_problem": "While this function pauses, every other waiting user or task is frozen too.",
@@ -267,6 +303,8 @@ class RecommendationEngine:
         cat = finding.get("category", "")
         if "Syntax" in title or "Delimiter" in title:
             return "PY_SYNTAX_ERROR"
+        if "Logical" in cat or "logical" in title.lower() or (rule_id and rule_id.startswith("PY_LOGICAL_")):
+            return rule_id or "PY_LOGICAL_ERROR"
         if "Synchronous Network Call" in title:
             return "PY_ASYNC_BLOCKING_HTTP"
         if "Blocking Synchronous I/O" in title:
@@ -943,6 +981,54 @@ class RecommendationEngine:
                 f_file=f_file,
                 orig=orig,
                 refactored=f"#include <stdio.h>\n{orig}",
+            )
+
+        # 24. Logical Errors (Calculation, Comparison, Condition)
+        if rkey.startswith("PY_LOGICAL_") or rkey == "PY_LOGICAL_ERROR":
+            fn_label = primary.get("function_name") or "Function"
+            if rkey == "PY_LOGICAL_CALCULATION":
+                rec_title = f"Correct Calculation Formula / Denominator in '{fn_label}'"
+                why = (
+                    f"In calculating an average or mean in '{fn_label}', dividing by 'len(...) + 1' causes an off-by-one error "
+                    "in the denominator that deflates the calculated result below the true mathematical mean. "
+                    "Dividing by the exact collection length restores complete mathematical correctness."
+                )
+                benefit = "Restores accurate calculation results and expected arithmetic averages."
+                refactored = re.sub(r"len\s*\(([^)]+)\)\s*\+\s*\d+", r"len(\1)", orig_snippet)
+            elif rkey == "PY_LOGICAL_COMPARISON":
+                rec_title = f"Invert Comparison Operator to Select Maximum/Topper in '{fn_label}'"
+                why = (
+                    f"Finding a maximum or topper in '{fn_label}' requires updating the tracking variable when the current element is greater "
+                    "than the highest seen so far ('>'). Using '<' prevents tracking positive values and leaves the topper empty."
+                )
+                benefit = "Correctly identifies and returns the true topper/maximum candidate (e.g. Priya)."
+                refactored = re.sub(r"\b<\b", ">", orig_snippet)
+            elif rkey == "PY_LOGICAL_CONDITION":
+                rec_title = f"Correct Threshold Condition in '{fn_label}'"
+                why = (
+                    f"When counting students who passed in '{fn_label}', the condition should check whether their score meets or exceeds "
+                    "the threshold ('>='). Checking '<' counts failing students instead of passing students."
+                )
+                benefit = "Accurately counts all passing students meeting the passing criteria (e.g. 3 students)."
+                refactored = re.sub(r"\b<\b", ">=", orig_snippet)
+            else:
+                rec_title = primary.get("title", "Resolve Algorithmic Logical Error")
+                why = primary.get("description", "Resolves algorithmic defect identified by semantic analysis.")
+                benefit = "Ensures the code produces correct outputs across all test cases."
+                refactored = primary.get("suggested_next_step", "")
+
+            return self._pack(
+                priority="P2 - High",
+                title=rec_title,
+                problem_addressed=f"Algorithmic logic defect at {loc} in {f_file}.",
+                why_recommended=why,
+                expected_benefit=benefit,
+                verification_instructions="Run automated test case verification to confirm actual outputs match expected results.",
+                f_ids=f_ids,
+                cause_ids=cause_ids,
+                f_file=f_file,
+                orig=orig_snippet,
+                refactored=refactored,
             )
 
         # Fallback for any other genuine finding

@@ -136,6 +136,17 @@ class AnalysisOrchestrator:
                         incomplete_files.append(f_path)
                     all_findings.extend(res["findings"])
                     all_relationships.extend(res["relationships"])
+
+                    # Modular Logical Error Detection & Test Case Verification
+                    if res.get("ast_parsed", True):
+                        try:
+                            from backend.app.analyzers.logical import LogicalErrorDetector
+                            log_findings, log_rels = LogicalErrorDetector.detect(content, file_path=f_path)
+                            all_findings.extend(log_findings)
+                            all_relationships.extend(log_rels)
+                        except Exception:
+                            # Completely isolated: logical evaluation failure never impacts base pipeline
+                            pass
                 elif lang in ("javascript", "typescript"):
                     res = self.js_analyzer.analyze(content, file_path=f_path)
                     all_findings.extend(res["findings"])

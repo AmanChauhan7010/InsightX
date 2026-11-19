@@ -9,6 +9,7 @@ import {
   Activity,
   FileText,
   AlertTriangle,
+  Sparkles,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -558,10 +559,51 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                 <span>Supporting Evidence</span>
                 <InfoButton topicKey="evidence" />
               </h4>
-              <p className="text-blue-800 leading-relaxed font-mono text-[11px]">
+              <p className="text-blue-800 leading-relaxed font-mono text-[11px] whitespace-pre-wrap">
                 {activeFinding.evidence}
               </p>
             </div>
+
+            {/* Dedicated Logical Error Verification & Dynamic Output Card */}
+            {activeFinding.category === 'Logical Error' && (
+              <div className="p-4 rounded-xl bg-purple-50/60 border border-purple-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-semibold text-purple-950 text-xs uppercase tracking-wider flex items-center space-x-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+                    <span>Automated Test Verification & Dynamic Outputs</span>
+                  </h4>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold ${
+                    activeFinding.is_confirmed
+                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                      : 'bg-amber-100 text-amber-800 border border-amber-300'
+                  }`}>
+                    {activeFinding.is_confirmed ? 'Confirmed via Test Execution' : 'Suspected Semantic Defect'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono">
+                  <div className="p-2.5 rounded bg-white border border-purple-100">
+                    <span className="text-[10px] font-bold text-slate-400 block uppercase">ACTUAL RUNTIME OUTPUT</span>
+                    <span className="text-red-600 font-semibold mt-0.5 block">
+                      {activeFinding.evidence.match(/• Actual Output:\s*([^\n]+)/)?.[1] || 'N/A'}
+                    </span>
+                  </div>
+                  <div className="p-2.5 rounded bg-white border border-purple-100">
+                    <span className="text-[10px] font-bold text-slate-400 block uppercase">EXPECTED REFERENCE OUTPUT</span>
+                    <span className="text-emerald-700 font-semibold mt-0.5 block">
+                      {activeFinding.evidence.match(/• Expected Output:\s*([^\n]+)/)?.[1] || 'Reliable specification required'}
+                    </span>
+                  </div>
+                </div>
+
+                {activeFinding.suggested_next_step && (
+                  <div className="text-[11px] text-purple-900 bg-white/70 p-2 rounded border border-purple-100">
+                    <span className="font-bold">Suggested Correction: </span>
+                    <span>{activeFinding.suggested_next_step}</span>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Potential Operational Consequences */}
             {activeFinding.potential_consequences && (
