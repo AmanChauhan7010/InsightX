@@ -1,11 +1,11 @@
 <div align="center">
 
-# ⚡ InsightX — AI Root Cause & Decision Intelligence Platform
+# ⚡ InsightX v2.0 — AI Root Cause & Decision Intelligence Platform
 
-### *From alerts to answers — detect, understand, and take the right action.*
+### *From alerts and bugs to verifiable solutions — detect, diagnose, auto-fix, and explain.*
 
 [![Build & Verification](https://img.shields.io/badge/build-passing-brightgreen.svg?style=flat-square)](https://github.com)
-[![Pytest Coverage](https://img.shields.io/badge/backend%20tests-62%2F62%20passed%20(100%25)-success?style=flat-square)](https://pytest.org)
+[![Pytest Coverage](https://img.shields.io/badge/backend%20tests-104%2F104%20passed%20(100%25)-success?style=flat-square)](https://pytest.org)
 [![Vitest Coverage](https://img.shields.io/badge/frontend%20tests-11%2F11%20passed%20(100%25)-success?style=flat-square)](https://vitest.dev)
 [![Python Version](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.14-blue.svg?style=flat-square)](https://python.org)
 [![React Version](https://img.shields.io/badge/react-18.3.1-61dafb.svg?style=flat-square)](https://react.dev)
@@ -14,7 +14,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 [![Academic Project](https://img.shields.io/badge/DA--IICT-MSc%20Data%20Science%20Innovation-orange.svg?style=flat-square)](https://www.daiict.ac.in)
 
-**A unified, explainable decision-intelligence platform connecting static program analysis, multivariate telemetry anomaly detection, causal root-cause localization, and automated runbook remediation.**
+**A unified, explainable decision-intelligence platform combining multi-layer static program analysis, intelligent logical error detection, sandbox test verification, multivariate telemetry anomaly detection, causal root-cause localization, and automated code remediation.**
 
 [Architecture Guide](docs/ARCHITECTURE.md) • [Analysis Rules & Policy](docs/ANALYSIS_RULES.md) • [Test Results](docs/TEST_RESULTS.md) • [REST API Reference](docs/API.md) • [Technical Deep Dive](EXPLANATION.md) • [Research Paper](paper/insightx_research_paper.md)
 
@@ -22,204 +22,273 @@
 
 ---
 
-## 📌 Executive Summary & The Observability Gap
+## 📌 Executive Summary
 
-Modern cloud-native architectures rely on dense graphs of containerized microservices characterized by high telemetry velocity, transient workloads, and intricate dependency topologies. When service disruptions occur, traditional monitoring tools (Prometheus, Grafana, Datadog, Splunk) inundate engineering teams with hundreds of noisy, correlated alerts without isolating the primary causal origin or prescribing deterministic corrective procedures.
+Modern software systems suffer from two major operational and engineering challenges:
+1. **Production Incidents (The Observability Gap)**: Distributed microservices flood on-call engineers with hundreds of noisy symptom alerts (high CPU, HTTP 504 timeouts, dropped requests). Traditional APMs detect that *something is broken*, but cannot determine *which line of code broke it* or *how to fix it*.
+2. **Silent Logical Errors & Complex Code Defect Remediation**: Code frequently passes syntax checks, linters, and executes cleanly with exit code `0`, yet produces incorrect business results due to off-by-one errors, inverted conditional logic, incorrect comparison operators, or faulty formulas. When defects are discovered, developers are left to manually patch and re-verify without automated guidance.
 
 ```
-Traditional Monitoring:   [Symptom Alert: High CPU]  -->  [Manual Log Search]  -->  [Trial-and-Error Fix]  -->  (MTTR: 30-90 min)
-InsightX Intelligence:    [Multimodal Ingestion]     -->  [Causal Lead-Lag]   -->  [Actionable Code Diff]   -->  (MTTR: < 2 min)
+Traditional Workflow: [Symptom Alert / Bug] --> [Manual Log Digging] --> [Guesswork Patch] --> (MTTR: 30-90 min)
+InsightX v2.0:        [Multimodal Ingestion] --> [AST + Logical Test]  --> [1-Click Auto-Fix] --> (MTTR: < 2 min)
 ```
 
-### The Problem Bottlenecks:
-1. **Alert Overload & Fatigue**: A single backend database lock cascades into hundreds of HTTP 504 gateway timeouts across upstream tiers.
-2. **Unclear Causal Origins**: Symptoms mask triggers. High CPU utilization is rarely the root cause—it is usually the downstream symptom of an unclosed connection pool, an event loop blocking sleep, or an unbounded queue backlog.
-3. **Trial-and-Error Remediation**: SREs waste critical minutes consulting outdated runbooks without knowing the expected impact of an intervention.
-4. **Inflated MTTR & Downtime**: Delayed Mean Time to Resolution directly escalates operational costs and customer churn.
-
-**InsightX bridges this gap** by implementing an automated four-stage decision-intelligence pipeline:
-
-$$\mathbf{DETECT} \longrightarrow \mathbf{DIAGNOSE} \longrightarrow \mathbf{RECOMMEND} \longrightarrow \mathbf{EXPLAIN}$$
+**InsightX bridges this gap** by combining:
+- **Multi-Layer Static Code Analysis** (Python AST, Ruff linter diagnostics, JS/TS, C/C++)
+- **Intelligent Logical Error Detection & Sandbox Verification** (detects code that runs cleanly but gives wrong answers)
+- **Automated Test Synthesizer** (generates edge, boundary, and normal test cases to empirically confirm bugs)
+- **Multivariate Telemetry Anomaly Detection** (Isolation Forest + dynamic Z-score saturation)
+- **Causal Root Cause Analysis (RCA)** (lead-lag cross-correlation + topology blast radius mapping)
+- **Real Automatic Code Remediation (Auto-Fix Engine)** (generates surgical patches, applies them to working copies, verifies with re-analysis, and persists revision history)
+- **Explainable AI (XAI)** (executive forensic narratives, evidence audit checklists, and contextual progressive disclosures)
 
 ---
 
-## 📊 Observability Platform Comparison
+## 📊 Platform Capabilities Matrix
 
-| Capability Dimension | Prometheus / Grafana | Datadog / Dynatrace | MicroRCA / Academic | **InsightX (This Platform)** |
+| Capability Dimension | Prometheus / Grafana | Datadog / Dynatrace | Traditional Linters | **InsightX v2.0** |
 | :--- | :---: | :---: | :---: | :---: |
-| **Telemetry Ingestion** | Metrics Only | Metrics + Logs + APM | Traces + Metrics | **Metrics + Logs + Source Code AST** |
-| **Independent Code Scan** | ❌ No | ❌ No | ❌ No | **✅ Yes (Single file, ZIP, or Paste)** |
-| **Detection Engine** | Static Thresholds | Statistical / ML | Graph Heuristics | **✅ Hybrid IsoForest + Dynamic Saturation** |
-| **Causal Localization** | Manual | Basic Correlation | PageRank Walk | **✅ Lead-Lag Cross-Correlation + Topology DAG** |
-| **Causal Confidence** | ❌ None | ❌ None | Node Ranking | **✅ Calibrated Qualitative Confidence** |
-| **Action Recommendations** | ❌ None | Static Runbooks | ❌ None | **✅ Prioritized (P1-P4) + Non-Destructive** |
-| **Automated Code Diffs** | ❌ None | ❌ None | ❌ None | **✅ Verified Unified Diffs (`difflib`)** |
-| **Explainable AI (XAI)** | ❌ None | Limited Dashboards | ❌ None | **✅ Complete Evidence Audit Trail Dossier** |
-| **Contextual "i" Disclosures**| ❌ None | Tooltips | ❌ None | **✅ 4-Question Progressive Disclosure** |
+| **Telemetry Ingestion** | Metrics Only | Metrics + Logs + APM | None | **Metrics + Logs + Multi-Language Code** |
+| **Independent Code Scan** | ❌ No | ❌ No | ✅ Single files | **✅ Single File, ZIP Repo, or Pasted Snippet** |
+| **Basic Linter & Undefined Symbol Catch** | ❌ No | ❌ No | ✅ Yes | **✅ Multi-Layer (AST + Ruff + Symbols)** |
+| **Logical Error Detection (Exit 0 Bugs)** | ❌ No | ❌ No | ❌ No | **✅ Detects Wrong Math, Inverted `<` / `>`, Loop Offsets** |
+| **Automated Sandbox Test Verification** | ❌ No | ❌ No | ❌ No | **✅ Subprocess Sandbox + Actual vs Expected Output** |
+| **Causal Root-Cause Localization** | Manual | Basic Correlation | ❌ None | **✅ Stack Trace Correlation + Lead-Lag Precursors** |
+| **Automated Code Remediation** | ❌ None | ❌ None | Limited / Rule-only | **✅ Surgical AST Auto-Fix with Unified Diffs** |
+| **Persistent Revision Tracking** | ❌ None | ❌ None | ❌ None | **✅ Immutable Revisions (v1 -> v2 -> v3) with Deltas** |
+| **Explainable AI (XAI) & Audit Trail** | ❌ None | Limited Dashboards | ❌ None | **✅ Evidence Audit Trail + 4-Question Disclosures** |
 
 ---
 
-## 🏗️ Monorepo Architecture
+## 🏗️ System Architecture
 
-InsightX is engineered with a strict separation of concerns across a layered FastAPI backend, modern React frontend, demonstration suite, and technical documentation:
+InsightX v2.0 is built as a modular monorepo featuring a high-performance **FastAPI backend** and a modern **React 18 + TypeScript frontend**:
 
 ```
-insightx/
+Creative/
 |-- frontend/                       # React 18, TypeScript, Vite, Tailwind CSS, Lucide icons, Recharts
 |   |-- src/
-|   |   |-- types/                  # Typed domain models & API schemas
-|   |   |-- services/               # Centralized typed API client & Info topic registry
-|   |   |-- components/ui/          # Accessible primitives (Badge, Card, Button, Modal, InfoButton)
-|   |   |-- components/layout/      # Responsive Sidebar, Navbar, Application shell
+|   |   |-- types/                  # Typed schemas (Analysis, Finding, RootCause, Recommendation, etc.)
+|   |   |-- services/               # Centralized typed API client & 4-Question Info registry
+|   |   |-- components/ui/          # Accessible primitives (Badge, Card, Button, Modal, InfoButton, CodeEditor)
+|   |   |-- components/layout/      # Responsive Sidebar, Navbar, Application Shell
 |   |   |-- features/
-|   |   |   |-- dashboard/          # Page 1: Overview Dashboard & KPI cards
-|   |   |   |-- upload/             # Page 2: Multi-Modal Ingestion Workspace
-|   |   |   |-- findings/           # Page 3: Filterable Analysis Results & Inspector
+|   |   |   |-- dashboard/          # Page 1: Overview Dashboard, KPI cards & Recent Diagnoses
+|   |   |   |-- upload/             # Page 2: New Analysis Workspace (Files, ZIPs, Pasted Snippet)
+|   |   |   |-- findings/           # Page 3: Filterable Analysis Results & Inspector with Test Details
 |   |   |   |-- root-cause/         # Page 4: Root Cause Explorer & Topology Graph
-|   |   |   |-- recommendations/    # Page 5: Prioritized Actions & Diff Viewer
+|   |   |   |-- recommendations/    # Page 5: Recommendations, Auto-Fix, Apply Fix & Diff Viewer
 |   |   |   |-- evidence/           # Page 6: XAI Narrative & Evidence Audit Trail
-|   |   |   |-- reports/            # Page 7: History Archive & Report Exporter
-|   |   |-- index.css               # Tailwind CSS & custom scrollbar styles
-|   |   |-- App.tsx                 # Main application workflow container
-|   |   |-- App.test.tsx            # Frontend unit and component tests (Vitest)
-|   |-- package.json
-|   |-- vite.config.ts              # Vite proxy configuration & Vitest setup
-|   |-- tailwind.config.js          # Design system typography & color tokens
+|   |   |   |-- reports/            # Page 7: History Archive & Report Exporter (Markdown/JSON)
+|   |   |-- App.tsx                 # Main application state container
+|   |   |-- App.test.tsx            # Vitest suite (11 comprehensive tests)
+|   |-- vite.config.ts              # Vite proxy & test config
+|   |-- tailwind.config.js          # Design system color tokens & typography
 |
-|-- backend/                        # Python 3.11+, FastAPI, Pydantic v2, SQLAlchemy, SQLite, pandas, scikit-learn
+|-- backend/                        # Python 3.11+, FastAPI, Pydantic v2, SQLAlchemy, SQLite, Ruff, scikit-learn
 |   |-- app/
 |   |   |-- main.py                 # FastAPI application lifespan & CORS middleware
-|   |   |-- core/                   # Configuration, CORS, SQLite database
-|   |   |-- models/                 # SQLAlchemy ORM models (Analyses, Findings, Causes, Recs)
-|   |   |-- schemas/                # Pydantic v2 validation contracts
-|   |   |-- services/               # Safe Ingestion & 4-stage pipeline orchestrator
+|   |   |-- core/                   # App configuration & SQLite database engine
+|   |   |-- models/                 # SQLAlchemy ORM models (Analysis, Finding, RootCause, Recommendation)
+|   |   |-- schemas/                # Pydantic v2 request/response contracts
+|   |   |-- services/               # Ingestion, Scoring, and AnalysisOrchestrator
 |   |   |-- analyzers/
-|   |   |   |-- code/               # Python AST visitor (15+ rules) & JS/TS static scanner
+|   |   |   |-- code/               # Python AST (20+ rules), Ruff linter, JS/TS & C/C++ analyzers
+|   |   |   |-- logical/            # Logical Error Detector, Test Synthesizer, Runner & Verifier
 |   |   |   |-- metrics/            # Isolation Forest & dynamic Z-score saturation
-|   |   |   |-- logs/               # RFC 5424 log parser & stack trace correlation
+|   |   |   |-- logs/               # RFC 5424 log parser & stack-trace correlator
+|   |   |-- autofix/                # Modular remediation engine (Registry, Patch Generator, Applier, Reanalyzer)
 |   |   |-- rca/                    # Causal cross-modality localization & hypothesis ranking
-|   |   |-- recommendations/        # Remediation synthesis & unified diff engine
+|   |   |-- recommendations/        # Action prioritization (P1-P4) & unified diff engine
 |   |   |-- explanations/           # Explainable AI (XAI) narrative & uncertainty auditor
 |   |   |-- reports/                # Structured JSON & Markdown dossier generators
 |   |   |-- api/v1/                 # Documented REST API endpoints
-|   |-- tests/                      # Pytest test suite (22 unit & integration tests)
+|   |-- tests/                      # Pytest suite (104 unit, integration, and E2E tests)
 |   |-- requirements.txt
 |
-|-- sample_data/                    # Real test inputs
+|-- sample_data/                    # Real-world test artifacts
 |   |-- code/                       # payment_service.py, worker.js, sample_project.zip
-|   |-- logs/                       # production_timeouts.log (RFC 5424 & tracebacks)
+|   |-- logs/                       # production_timeouts.log (RFC 5424 logs & tracebacks)
 |   |-- metrics/                    # system_telemetry.csv (CPU spike & latency saturation)
 |
-|-- docs/
-|   |-- ARCHITECTURE.md             # System design & component interaction
-|   |-- API.md                      # REST API endpoint reference
-|   |-- ANALYSIS_METHODS.md         # Scientific detection rules & algorithms
-|
-|-- paper/                          # Academic Research Paper & IEEE Artifacts
-|   |-- insightx_research_paper.md  # Comprehensive research paper in Markdown
-|   |-- insightx_ieee_paper.tex     # IEEE conference LaTeX source
-|   |-- compile_ieee_pdf.py         # ReportLab-based IEEE two-column PDF compiler
-|   |-- insightx_ieee_paper.pdf     # Publication-quality compiled PDF
-|
-|-- EXPLANATION.md                  # Comprehensive Technical Deep-Dive & Mathematical Guide
-|-- docker-compose.yml              # Containerized multi-service deployment
+|-- docs/                           # Architecture, API, rules, and test documentation
+|-- paper/                          # Academic IEEE conference research paper & LaTeX sources
 |-- run_app.sh                      # Unified local launch script
-|-- .env.example                    # Environment variable template
+|-- docker-compose.yml              # Containerized multi-service deployment
 ```
 
 ---
 
-## ⚡ The Four Connected Stages
+## ⚡ The 5-Stage Decision Intelligence Pipeline
 
 ```
-   +-------------------------------------------------------------------------+
-   |  1. DETECT (Static AST Inspection + Isolation Forest Anomaly Detection) |
-   +-------------------------------------------------------------------------+
-                                        |
-                                        v
-   +-------------------------------------------------------------------------+
-   |  2. DIAGNOSE (Lead-Lag Cross-Correlation + Topology Blast Radius Traversal)
-   +-------------------------------------------------------------------------+
-                                        |
-                                        v
-   +-------------------------------------------------------------------------+
-   |  3. RECOMMEND (Prioritized Actions P1-P4 + Verified Unified Code Diffs) |
-   +-------------------------------------------------------------------------+
-                                        |
-                                        v
-   +-------------------------------------------------------------------------+
-   |  4. EXPLAIN (XAI Narrative Synthesis + Evidence Audit Trail Checklist)  |
-   +-------------------------------------------------------------------------+
+  +---------------------------------------------------------------------------------------------------+
+  | 1. MULTI-LAYER INGESTION & DETECTION                                                               |
+  |    • Multi-Language AST Analysis (Python, JS/TS, C/C++)                                           |
+  |    • Ruff Linter & Symbol Scope Analysis (undefined functions, name errors, syntax traps)          |
+  |    • Intelligent Logical Error Detection (calculation bugs, inverted conditions, off-by-one)     |
+  |    • Isolation Forest Metric Anomaly Detection & RFC 5424 Log Stack-Trace Ingestion               |
+  +-------------------------------------------------+-------------------------------------------------+
+                                                    |
+                                                    v
+  +---------------------------------------------------------------------------------------------------+
+  | 2. AUTOMATED SANDBOX TEST VERIFICATION                                                            |
+  |    • Synthesizes normal, edge-case, and boundary test harnesses                                   |
+  |    • Executes code in an isolated subprocess sandbox (`IsolatedCodeRunner`) with 2.0s timeout     |
+  |    • Compares Actual Output vs Expected Output to confirm defect presence before flagging         |
+  +-------------------------------------------------+-------------------------------------------------+
+                                                    |
+                                                    v
+  +---------------------------------------------------------------------------------------------------+
+  | 3. CAUSAL ROOT CAUSE ANALYSIS (RCA)                                                               |
+  |    • Maps runtime stack-traces directly to AST code nodes                                         |
+  |    • Temporal Lead-Lag Cross-Correlation discovers true causal precursors                         |
+  |    • Ranks root-cause hypotheses with calibrated qualitative confidence (High, Med-High, Medium)  |
+  +-------------------------------------------------+-------------------------------------------------+
+                                                    |
+                                                    v
+  +---------------------------------------------------------------------------------------------------+
+  | 4. DECISION RECOMMENDATIONS & AUTO-FIX REMEDIATION                                                |
+  |    • Prioritizes actions across severity tiers (P1 Immediate to P4 Low)                           |
+  |    • Generates AST-aware surgical patches and unified diffs (`difflib`)                           |
+  |    • 1-Click "Auto Fix" applies patches to working copies, re-analyzes, and saves revision (v2)   |
+  |    • Runs re-analyzed code through automated test harnesses to verify test passes and delta       |
+  +-------------------------------------------------+-------------------------------------------------+
+                                                    |
+                                                    v
+  +---------------------------------------------------------------------------------------------------+
+  | 5. EXPLAINABLE AI (XAI) & AUDIT DOSSIER                                                           |
+  |    • Executive Diagnostic Narrative (What happened? Why does it matter? What to do?)              |
+  |    • Verifiable Evidence Audit Trail linking findings to line numbers and timestamps              |
+  |    • Interactive "i" popovers answering 4 core progressive disclosure questions                   |
+  +---------------------------------------------------------------------------------------------------+
 ```
 
-### Stage 1: DETECT
-- **Python AST Visitor**: Inspects Abstract Syntax Tree nodes across 15+ defect classes:
-  - Event loop blocking: Synchronous `time.sleep()` or synchronous network I/O (`requests.get`) inside `async def`.
-  - Resource leaks: Unclosed database connections (`sqlite3.connect`, pool handles) lacking context managers.
-  - Concurrency deadlocks: Mutex `.acquire()` without exception-safe `with lock:` or `finally: lock.release()`.
-  - Arithmetic crashes: Unguarded divisions `/ y` lacking zero-check guards, and constant division by zero (`/ 0`).
-  - Security vulnerabilities: Dynamic SQL injection via formatted f-strings, dangerous `eval()`/`exec()`, and hardcoded secrets (automatically masked).
-  - Memory leaks: Unbounded collection appending in global scope without ring buffer limits.
-- **JavaScript & TypeScript Scanner**: Detects synchronous blocking file operations (`fs.readFileSync`), dynamic code execution (`eval()`, `new Function()`), prototype pollution (`__proto__`), unhandled rejections, and empty catch blocks.
-- **Multivariate Telemetry Anomaly Detection**: Ensembles unsupervised Isolation Forest ($T = 100$) with dynamic rolling saturation thresholds ($|Z| > 2.5\sigma$, saturation $> 85\%$).
-- **Log Forensics**: Parses RFC 5424 structured events, isolates exception frames, and computes temporal error density.
+---
 
-### Stage 2: DIAGNOSE (Root Cause Analysis)
-- **Causal Evidence Matching**: Maps runtime log stack trace line numbers directly to static AST code defect nodes.
-- **Lead-Lag Temporal Cross-Correlation**: Evaluates normalized cross-correlation across temporal lags $\tau \in [-4, +4]$ to discover which metric or event was the true causal precursor.
-- **Dependency Topology Traversal**: Traverses directed import and call graphs to compute blast radius and downstream impact.
-- **Calibrated Qualitative Confidence**: Strictly avoids ungrounded pseudoscientific probabilities; assigns calibrated ratings:
-  - **High (> 0.90)**: Confirmed by active runtime stack trace proof.
-  - **Medium-High (0.75 - 0.88)**: Aligned cross-modal telemetry correlation (e.g., latency anomaly + event loop sleep).
-  - **Medium (0.70)**: Static structural risk prior to production incident.
+## 🔍 Key Detection Engines Explained
 
-### Stage 3: RECOMMEND
-- **Actionable Decision Guidance**: Ranks corrective actions across priority tiers (`P1 - Immediate`, `P2 - High`, `P3 - Medium`, `P4 - Low`).
-- **Unified Code Diff Generation**: Generates line-by-line before/after refactoring diffs (`difflib.unified_diff`) for peer review.
-- **Non-Destructive Safety**: Never executes automated modifications without human approval.
-- **Verification Runbooks**: Provides specific verification tests (e.g. pytest commands, load benchmarks).
+### 1. Multi-Layer Static Code Analyzer
+- **Syntax & Language Validation**: Rejects malformed files cleanly, giving exact line numbers and syntax explanations.
+- **Ruff Linting & Symbol Resolution**: Detects undefined variables, invalid built-ins (e.g. `printf("hello")` instead of `print`), missing imports, and unused symbols.
+- **Python AST Visitor (20+ rules)**:
+  - *Event Loop Blocking*: Synchronous `time.sleep()` or synchronous network I/O (`requests.get`) inside `async def`.
+  - *Unclosed Resources*: File handles or SQLite connections opened without context managers (`with`).
+  - *Concurrency Deadlocks*: Mutex `.acquire()` calls lacking safe `with lock:` or `finally: lock.release()`.
+  - *Unchecked Division / ZeroDivisionError*: Unguarded divisions without denominator validation.
+  - *Security Deficiencies*: Dynamic SQL injection via f-strings, dangerous `eval()`/`exec()`, hardcoded secrets (automatically masked).
+  - *Infinite Retry Loops*: `while True` blocks with swallowed exceptions and missing delay or exit condition.
+- **C / C++ Static Scanner**: Identifies dangerous buffer operations (`strcpy`, `sprintf`, `gets`), unfree'd `malloc` allocations, format string vulnerabilities, and missing returns.
+- **JavaScript & TypeScript Scanner**: Detects synchronous blocking file operations (`fs.readFileSync`), dynamic code execution, prototype pollution (`__proto__`), unhandled Promise rejections, and empty catch blocks.
 
-### Stage 4: EXPLAIN
-- **Executive Diagnostic Narrative**: Human-readable synthesis answering *What was detected? How was it detected? Why does it matter? What remains uncertain?*
-- **Empirical Evidence Audit Trail**: Verifiable checklist linking findings back to source files, exact lines, and telemetry timestamps.
-- **Uncertainty Disclosure**: Explicitly lists missing evidence or analytical assumptions.
+### 2. Intelligent Logical Error Detector & Verifier
+Unlike linters that only inspect syntax, InsightX detects **semantic and algorithmic defects** where code runs with exit code `0` but produces incorrect outputs:
+- **Calculation Errors**: Incorrect arithmetic operations and wrong denominators (e.g. `sum(marks) / (len(marks) + 1)`).
+- **Comparison Operator Inversions**: Accumulator conditions inverted (e.g. `if average < highest: highest = average` when searching for maximums).
+- **Threshold / Boundary Logic Inversions**: Inverted filter conditions (e.g. `if average < 40: count += 1` inside a function named `count_passed`).
+- **Off-by-One & Loop Boundary Errors**: Loop ranges excluding or overshooting boundary items.
+- **Automated Sandbox Execution**: Runs the code in an isolated Python process using `IsolatedCodeRunner` with strict execution timeouts (2.0s) and memory protection.
+- **Empirical Output Verification**: Verifies the code against synthesized test cases, proving the mismatch between **Actual Output** and **Expected Output** before raising a finding.
+
+### 3. Multivariate Anomaly & Telemetry Engine
+- **Isolation Forest ($T = 100$)**: Evaluates multidimensional numeric telemetry (CPU, RAM, latency, connection pools) to isolate anomalous vectors without requiring labeled training data.
+- **Dynamic Z-Score Saturation ($|Z| > 2.5\sigma$, saturation $> 85\%$)**: Identifies sharp saturation knees and persistent threshold violations.
+
+### 4. Causal Root Cause Engine (RCA)
+- **Cross-Modal Traceback Mapping**: Correlates runtime exception frames extracted from RFC 5424 log streams directly with static AST defect nodes in the source files.
+- **Lead-Lag Temporal Cross-Correlation**: Calculates normalized cross-correlation across temporal lags $\tau \in [-4, +4]$ to determine whether high CPU caused latency or an unclosed connection caused database timeouts.
+- **Dependency Topology Traversal**: Traverses module import graphs to compute blast radius and downstream impact across upstream callers.
 
 ---
 
-## 🖥️ Interactive Web Application (7 Dedicated Pages)
+## 🛠️ The Real Automatic Code Remediation Engine
 
-The frontend is a light-mode engineering intelligence dashboard designed with Inter typography, `#2563EB` primary accents, `#0F172A` text, subtle borders, and generous whitespace:
+InsightX does **not** simulate fixes by hiding findings or artificially boosting scores. It performs real source-code remediation:
 
-1. **Overview Dashboard** (`/`): System health summary, KPI cards, severity distribution bars, recent investigation history, and **1-click demonstration loaders**.
-2. **New Analysis Workspace** (`/upload`): Multi-modal input workspace supporting drag & drop files, ZIP archives, direct code paste editor, and optional metrics/logs. Displays genuine multi-stage progress states.
-3. **Analysis Results & Findings Inspector** (`/findings`): Health scorecard (0-100), filter toolbar (search, severity, category, file), and deep inspection modal with code snippets and remediation steps.
-4. **Root Cause Explorer** (`/root-cause`): Ranked probable hypotheses with confidence badges, supporting evidence, ranking rationale, and an **Interactive SVG Call/Dependency Topology Graph**.
-5. **Decision Recommendations** (`/recommendations`): Prioritized corrective actions with expected impact, verification instructions, **Interactive Code Diff Viewer**, and a **"Mark as Reviewed" toggle**.
-6. **Explanations & Forensic Evidence Audit** (`/evidence`): Primary explainability view with an Executive Diagnostic Narrative, Evidence Checklist table, and uncertainty disclosures.
-7. **History & Exportable Reports** (`/reports`): Stored investigation archive, instant target switching, **Structured JSON Export**, and **Human-Readable Markdown Dossier** with 1-click download (`.md`).
-
----
-
-## ℹ️ Contextual Information ("i") Popovers
-
-Accessible `InfoButton` icons are placed strategically throughout the UI (Root Cause Confidence, Severity Taxonomy, Anomaly Detection, Recommendations, Evidence, Health Score, and Dependency Graph). Each popover answers four structured questions:
-1. **What does this mean?**
-2. **How does InsightX calculate or determine it?**
-3. **Why is it important?**
-4. **What are its operational limitations?**
+1. **Rule-Based & AST-Aware Patch Generation**: The patch generator (`backend/app/autofix/patch_generator.py`) generates surgical line-level code replacements preserving surrounding indentation, imports, and comments.
+2. **Unified Diff Preview**: Users can inspect exact side-by-side unified diffs (`difflib.unified_diff`) before applying.
+3. **1-Click Application**: Clicking **"Auto Fix"** or **"Apply Fix & Re-analyze"**:
+   - Applies the patch to an isolated working copy of the code.
+   - Re-runs the full backend analyzer on the updated code.
+   - Automatically re-runs test verification to confirm tests pass.
+   - Re-calculates the health score and resolves fixed findings.
+   - Chains the new analysis into persistent revision history (`v1 -> v2 -> v3`).
+   - Displays before-and-after score deltas (e.g., `+18 points improvement`).
 
 ---
 
-## 🎯 Realistic Demonstration Cases
+## 🎯 Benchmark Demonstration: Student Grading System
 
-InsightX includes 4 pre-configured demonstration cases runnable via 1-click on the Overview Dashboard:
+InsightX includes out-of-the-box validation on classic logical error scenarios:
 
-| Case ID | Scenario Name | Target Input Artifacts | Failure Mechanism & Primary Ground Truth |
-| :--- | :--- | :--- | :--- |
-| **Case A** | Python Async Event Loop Blocking | `sample_data/code/payment_service.py` | Synchronous `time.sleep(2.5)` inside `async def process_payment`, unclosed SQLite connection leak, and mutable default container. |
-| **Case B** | Multi-Module Project Architecture | `sample_data/code/sample_project.zip` | 3-tier Python service (`coordinator.py`, `worker.py`, `db.py`) with cross-file imports, unguarded zero division, and hardcoded secrets. |
-| **Case C** | Multivariate System Telemetry | `sample_data/metrics/system_telemetry.csv` | Timestamped telemetry time series exhibiting severe CPU saturation (>98%) and P95 latency spikes (>5000ms) isolated via Isolation Forest. |
-| **Case D** | Combined Multimodal Investigation | `payment_service.py` + `production_timeouts.log` | RFC 5424 log tracebacks at line 21 directly match the static event loop blocking defect, yielding a Confirmed Runtime Crash hypothesis. |
+```python
+students = {
+    "Aman": [85, 90, 78],
+    "Priya": [92, 88, 95],
+    "Rohit": [70, 65, 80]
+}
+
+def calculate_average(marks):
+    return sum(marks) / (len(marks) + 1)  # Defect 1: len + 1 denominator
+
+def find_topper(students):
+    highest = 0
+    topper = ""
+    for name, marks in students.items():
+        average = calculate_average(marks)
+        if average < highest:             # Defect 2: Inverted comparison (< instead of >)
+            highest = average
+            topper = name
+    return topper
+
+def count_passed(students):
+    count = 0
+    for marks in students.values():
+        average = calculate_average(marks)
+        if average < 40:                  # Defect 3: Inverted threshold (< 40 counts failures)
+            count += 1
+    return count
+
+print("Topper:", find_topper(students))
+print("Passed:", count_passed(students))
+print("Aman average:", round(calculate_average(students["Aman"]), 2))
+```
+
+### Initial Run (Before Fix):
+```text
+Topper: 
+Passed: 0
+Aman average: 63.25
+```
+
+### InsightX Detection & Verification:
+1. **`calculate_average`**: Flags `PY_LOGICAL_CALCULATION`. Verifies `calculate_average([85, 90, 78])` returns `63.25` instead of `84.33`.
+2. **`find_topper`**: Flags `PY_LOGICAL_COMPARISON`. Verifies `find_topper(students)` returns `""` instead of `"Priya"`.
+3. **`count_passed`**: Flags `PY_LOGICAL_CONDITION`. Verifies `count_passed(students)` returns `0` instead of `3`.
+
+### After Applying Auto-Fixes (Revision 4):
+```text
+Topper: Priya
+Passed: 3
+Aman average: 84.33
+```
+- **Health Score**: Improves from `68/100` $\rightarrow$ `100/100`.
+- **Findings**: 0 remaining.
+- **Audit History**: All 4 revisions preserved with before/after diffs in the History tab.
+
+---
+
+## 🖥️ Interactive Web UI (7 Specialized Modules)
+
+The frontend features a clean, accessible interface with zero visual clutter:
+
+1. **Overview Dashboard** (`/`): System health scorecard, KPI statistics, severity breakdown, recent diagnoses list, and 1-click sample cases.
+2. **New Analysis Workspace** (`/upload`): Multi-modal input center supporting file drag-and-drop, ZIP repository uploads, interactive syntax-highlighted code editor (Tab indentation, format, clear), and optional metrics/logs.
+3. **Analysis Results & Findings Inspector** (`/findings`): Searchable and filterable findings table, category tags, severity badges, and deep inspection modal with verified test case results.
+4. **Root Cause Explorer** (`/root-cause`): Ranked causal hypotheses, confidence ratings, and an **interactive SVG call & dependency graph**.
+5. **Decision Recommendations** (`/recommendations`): Prioritized action cards (P1-P4), Simple vs Technical explanations, unified diff viewer, and 1-click **"Auto Fix"** / **"Apply Fix & Re-analyze"**.
+6. **Explanations & Forensic Evidence** (`/evidence`): Plain-language executive summary, score deduction breakdown, and empirical evidence checklist table.
+7. **History & Exportable Reports** (`/reports`): Revision archive with one-click export to **Structured JSON** or **Comprehensive Markdown Dossier (`.md`)**.
 
 ---
 
@@ -227,23 +296,22 @@ InsightX includes 4 pre-configured demonstration cases runnable via 1-click on t
 
 ### Prerequisites
 - **Python**: 3.11+
-- **Node.js**: v18.0.0+ (npm v9+)
+- **Node.js**: v18+ (npm v9+)
 
-### Option A: Unified Local Launcher (Recommended)
-Clone the repository and run the startup script:
+### Option A: Unified Local Script (Recommended)
 ```bash
 chmod +x run_app.sh
 ./run_app.sh
 ```
-- **Web Dashboard**: [http://localhost:5173](http://localhost:5173)
-- **FastAPI Backend & Interactive Swagger Docs**: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+- **Frontend UI**: [http://localhost:5173](http://localhost:5173)
+- **Backend API & Swagger Docs**: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
 ### Option B: Docker Compose
 ```bash
 docker-compose up --build
 ```
 
-### Option C: Manual Independent Start
+### Option C: Manual Start in Separate Terminals
 
 **Terminal 1 — Backend (FastAPI)**:
 ```bash
@@ -252,7 +320,7 @@ export PYTHONPATH=.
 python3 -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-**Terminal 2 — Frontend (Vite React)**:
+**Terminal 2 — Frontend (Vite + React)**:
 ```bash
 cd frontend
 npm install
@@ -263,50 +331,52 @@ npm run dev
 
 ## 🧪 Testing & Verification
 
-The codebase includes full unit, integration, and end-to-end test suites.
+InsightX includes rigorous automated test coverage across both backend and frontend:
 
 ### Backend Test Suite (Pytest)
 ```bash
-PYTHONPATH=. pytest backend/tests -v
+PYTHONPATH=. python3 -m pytest backend/tests/ tests/ -v
 ```
-**Results: 22 passed in 1.11s**
-- Health endpoint verification
-- Single-file and multi-file multipart uploads
-- ZIP archive path validation & Zip Slip defense
-- Python AST syntax and semantic rules
-- JavaScript/TypeScript event loop and security rules
-- Multivariate Isolation Forest & Z-score saturation
-- Log stack trace extraction & code path correlation
-- Root cause ranking & qualitative confidence
-- Unified diff generation & verification instructions
-- Report generation (JSON and Markdown)
-- Full end-to-end integration workflow (`test_e2e_workflow.py`)
+**Results: 104 passed in 7.85s (100% Pass Rate)**
+- Multi-layer syntax and lexical validation
+- Ruff undefined symbol and linting integration
+- Python AST structural rules & security scanning
+- C / C++ buffer and memory safety checks
+- JavaScript/TypeScript static analysis
+- Logical error detection & calculation verifications
+- Subprocess sandbox code runner (`IsolatedCodeRunner`)
+- Test case synthesis and empirical output validation
+- Isolation Forest anomaly detection & Z-score saturation
+- RFC 5424 log parsing and stack-trace correlation
+- Root cause ranking & qualitative confidence calibration
+- Auto-Fix patch generation, validation, application, and persistence
+- End-to-end multi-revision analysis workflows
 
 ### Frontend Test Suite (Vitest)
 ```bash
-cd frontend && npm test
+cd frontend && npm test -- --run
 ```
-**Results: 5 passed in 0.38s**
-- Badge variant rendering
-- SeverityBadge classification across all 5 tiers
-- ConfidenceBadge with calibrated percentage calculation
-- Contextual InfoModal answering all 4 required questions
-- Button click dispatch
+**Results: 11 passed in 0.67s (100% Pass Rate)**
+- High-contrast syntax code editor rendering & Tab indentation
+- Multi-tab navigation & synchronized badge counts
+- Contextual InfoModal answering all 4 core questions
+- Recommendations view with Simple/Technical toggle and Auto Fix buttons
+- Overview Dashboard recent diagnoses interaction and 1-click loading
 
 ### Production Frontend Build
 ```bash
 cd frontend && npm run build
 ```
-**Results: Compiled in 0.69s with zero errors or warnings.**
+**Results: Compiled successfully in 1.22s with zero TypeScript or bundling errors.**
 
 ---
 
 ## 🔒 Security & Data Safety Guarantees
 
-- **Zero Arbitrary Execution**: User code is parsed exclusively into Abstract Syntax Trees using static analyzers. Uploaded code is never executed.
-- **Zip Slip Defense**: Archives are rigorously validated against directory traversal attacks (`../`, absolute paths).
-- **Automated Secret Masking**: Discovered credentials, bearer tokens, and API keys are masked (`sk****78`) in UI snippets and exported dossiers.
-- **Local Deterministic Fallback**: All detection rules, causal rankings, and diff syntheses run 100% deterministically on local infrastructure without external network dependencies.
+- **Subprocess Sandbox Isolation**: Code execution for test verification runs in isolated subprocesses with strict memory, environment, and 2.0s wall-clock timeouts.
+- **Zip Slip Defense**: Uploaded archives are strictly checked against directory traversal vulnerabilities (`../`, absolute paths).
+- **Automated Secret Masking**: Credentials, private keys, bearer tokens, and API secrets are automatically masked (`sk****78`) in UI views and reports.
+- **Zero External Network Leaks**: All static rules, causal algorithms, and test synthesizers run completely on local infrastructure without sending code to external servers.
 
 ---
 
