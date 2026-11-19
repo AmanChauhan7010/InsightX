@@ -1,0 +1,11 @@
+2026-11-15 14:15:00 [checkout-api] INFO Worker cluster initialized with 8 asyncio coroutine workers
+2026-11-15 14:15:20 [checkout-api] INFO Health check heartbeat status=UP latency=4ms
+2026-11-15 14:15:35 [checkout-api] WARN Event loop scheduling lag exceeded threshold (observed=2480ms, threshold=50ms)
+2026-11-15 14:15:45 [ingress-gw] ERROR 504 Gateway Timeout: upstream service failed to respond within 3000ms deadline
+2026-11-15 14:15:50 [checkout-api] CRITICAL Traceback (most recent call last):
+  File "payment_service.py", line 18, in process_payment
+    time.sleep(2.5)
+TimeoutError: Coroutine worker starved of event loop CPU cycles
+2026-11-15 14:16:02 [checkout-api] ERROR OperationalError: connection pool exhausted (active_connections=500/500, waiting_queue=128)
+2026-11-15 14:16:10 [checkout-api] ERROR Database connection leak detected: 48 unclosed handles allocated from payment_service.py:9
+2026-11-15 14:16:20 [ingress-gw] ERROR 504 Gateway Timeout: cascading failure across checkout worker pool

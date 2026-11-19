@@ -1,0 +1,357 @@
+from dataclasses import dataclass, asdict
+from typing import Dict, List, Optional, Tuple
+
+
+@dataclass(frozen=True)
+class AutoFixDefinition:
+    rule_id: str
+    name: str
+    supported_languages: Tuple[str, ...]
+    auto_fixable: bool
+    transformation_summary: str
+    preconditions: str
+    safety_checks: str
+    verification_method: str
+    unavailable_reason: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, object]:
+        d = asdict(self)
+        d["supported_languages"] = list(self.supported_languages)
+        return d
+
+
+class AutoFixRegistry:
+    """
+    Registry of deterministic automatic fixes and explicit unavailability policies
+    for complex recommendations that cannot be transformed safely without developer review.
+    """
+
+    DEFINITIONS: Dict[str, AutoFixDefinition] = {
+        "PY_ASYNC_BLOCKING_SLEEP": AutoFixDefinition(
+            rule_id="PY_ASYNC_BLOCKING_SLEEP",
+            name="Replace blocking time.sleep() with await asyncio.sleep()",
+            supported_languages=("python",),
+            auto_fixable=True,
+            transformation_summary="Replaces time.sleep(<arg>) inside async def with await asyncio.sleep(<arg>) and ensures 'import asyncio' exists without duplicates.",
+            preconditions="Call is inside AsyncFunctionDef and parses cleanly as Python AST.",
+            safety_checks="AST syntax verification, source SHA-256 hash match, preserves indentation and unrelated lines.",
+            verification_method="Re-run PythonCodeAnalyzer and verify PY_ASYNC_BLOCKING_SLEEP is resolved with zero syntax errors.",
+        ),
+        "PY_UNCLOSED_RESOURCE": AutoFixDefinition(
+            rule_id="PY_UNCLOSED_RESOURCE",
+            name="Wrap unclosed open() file descriptor in 'with' context manager",
+            supported_languages=("python",),
+            auto_fixable=True,
+            transformation_summary="Rewrites 'f = open(...); ...' into 'with open(...) as f:' when handle lifetime stays strictly within the local function block.",
+            preconditions="Target is open() assigned to a local variable that is NOT returned or escaped outside the block.",
+            safety_checks="Rejects handles returned to callers; validates resulting Python AST syntax.",
+            verification_method="Re-run PythonCodeAnalyzer and verify PY_UNCLOSED_RESOURCE is resolved.",
+        ),
+        "PY_UNAWAITED_COROUTINE": AutoFixDefinition(
+            rule_id="PY_UNAWAITED_COROUTINE",
+            name="Await unawaited coroutine call in valid async context",
+            supported_languages=("python",),
+            auto_fixable=True,
+            transformation_summary="Inserts 'await ' before unawaited coroutine calls inside async def, or wraps clean non-loop sync entrypoint calls with 'asyncio.run(...)'.",
+            preconditions="Callee is confirmed async; does NOT blindly insert await in synchronous functions or spin up asyncio.run() inside tight sync loops.",
+            safety_checks="Verifies enclosing async/sync scope, avoids nested loops in sync functions, validates Python AST syntax.",
+            verification_method="Re-run PythonCodeAnalyzer and verify PY_UNAWAITED_COROUTINE is resolved.",
+        ),
+        "PY_MISSING_TIMEOUT": AutoFixDefinition(
+            rule_id="PY_MISSING_TIMEOUT",
+            name="Add configurable timeout parameter to HTTP requests",
+            supported_languages=("python",),
+            auto_fixable=True,
+            transformation_summary="Inserts explicit 'timeout=<policy_seconds>' keyword argument into recognized requests.* calls using AST call-end offsets.",
+            preconditions="Recognized requests.<method>(...) call lacking timeout keyword and parsing cleanly.",
+            safety_checks="Configurable timeout policy (default 10s, user-overridable), AST syntax check, no duplicate keyword arguments.",
+            verification_method="Re-run PythonCodeAnalyzer and verify PY_MISSING_TIMEOUT is resolved.",
+        ),
+        "PY_SILENT_EXCEPT": AutoFixDefinition(
+            rule_id="PY_SILENT_EXCEPT",
+            name="Replace silent 'except Exception: pass' with structured error logging",
+            supported_languages=("python",),
+            auto_fixable=True,
+            transformation_summary="Binds exception variable and replaces 'pass' with 'logger.exception(...)', ensuring logging import and module logger exist.",
+            preconditions="ExceptHandler body is solely [ast.Pass].",
+            safety_checks="Preserves handler indentation, avoids duplicate logging imports, validates Python AST syntax.",
+            verification_method="Re-run PythonCodeAnalyzer and verify PY_SILENT_EXCEPT is resolved.",
+        ),
+        "PY_BARE_EXCEPT": AutoFixDefinition(
+            rule_id="PY_BARE_EXCEPT",
+            name="Narrow bare 'except:' to 'except Exception as err:'",
+            supported_languages=("python",),
+            auto_fixable=True,
+            transformation_summary="Rewrites bare 'except:' to 'except Exception as err:' so SystemExit and KeyboardInterrupt are not swallowed.",
+            preconditions="ExceptHandler has type=None.",
+            safety_checks="Preserves handler body and indentation; validates Python AST syntax.",
+            verification_method="Re-run PythonCodeAnalyzer and verify PY_BARE_EXCEPT is resolved.",
+        ),
+        "PY_UNBOUNDED_COLLECTION": AutoFixDefinition(
+            rule_id="PY_UNBOUNDED_COLLECTION",
+            name="Convert unbounded global list to collections.deque(maxlen=N)",
+            supported_languages=("python",),
+            auto_fixable=True,
+            transformation_summary="Replaces empty module-level 'var = []' with 'var = deque(maxlen=<policy>)' and adds 'from collections import deque'.",
+            preconditions="Target collection is an empty module-level list literal mutated via append/extend.",
+            safety_checks="Configurable maxlen policy, avoids duplicate imports, validates Python AST syntax.",
+            verification_method="Re-run PythonCodeAnalyzer and verify PY_UNBOUNDED_COLLECTION is resolved.",
+        ),
+        "PY_MUTABLE_DEFAULT": AutoFixDefinition(
+            rule_id="PY_MUTABLE_DEFAULT",
+            name="Replace mutable default argument with None sentinel",
+            supported_languages=("python",),
+            auto_fixable=True,
+            transformation_summary="Changes 'param=[]/{}/set()' to 'param=None' and initializes a fresh container inside the function body.",
+            preconditions="Function parameter default is a literal list, dict, or set.",
+            safety_checks="Preserves docstrings and indentation; validates Python AST syntax.",
+            verification_method="Re-run PythonCodeAnalyzer and verify PY_MUTABLE_DEFAULT is resolved.",
+        ),
+        "PY_HARDCODED_SECRET": AutoFixDefinition(
+            rule_id="PY_HARDCODED_SECRET",
+            name="Read hardcoded credential from os.environ.get()",
+            supported_languages=("python",),
+            auto_fixable=True,
+            transformation_summary="Replaces plaintext credential literal assignment with os.environ.get('<VAR_NAME>', '') and ensures 'import os'.",
+            preconditions="Top-level or local simple string assignment matching credential pattern.",
+            safety_checks="Preserves variable name and trailing comments; validates Python AST syntax.",
+            verification_method="Re-run PythonCodeAnalyzer and verify PY_HARDCODED_SECRET is resolved.",
+        ),
+        "PY_UNSAFE_DESERIALIZATION": AutoFixDefinition(
+            rule_id="PY_UNSAFE_DESERIALIZATION",
+            name="Replace unsafe yaml.load() with yaml.safe_load()",
+            supported_languages=("python",),
+            auto_fixable=True,
+            transformation_summary="Rewrites 'yaml.load(...)' to 'yaml.safe_load(...)'. (pickle/marshal remains manual due to wire-format dependency.)",
+            preconditions="Call target is yaml.load() without SafeLoader.",
+            safety_checks="Rejects pickle/marshal auto-fix; validates Python AST syntax.",
+            verification_method="Re-run PythonCodeAnalyzer and verify PY_UNSAFE_DESERIALIZATION is resolved.",
+        ),
+        "JS_MISSING_TIMEOUT": AutoFixDefinition(
+            rule_id="JS_MISSING_TIMEOUT",
+            name="Add timeout / AbortSignal to JS/TS HTTP request",
+            supported_languages=("javascript", "typescript"),
+            auto_fixable=True,
+            transformation_summary="Adds AbortSignal.timeout(5000) to fetch() or { timeout: 5000 } to axios calls on safe single-line invocations.",
+            preconditions="Single-line fetch() or axios.* call without existing timeout/signal.",
+            safety_checks="Delimiter balance verification and no-op rejection.",
+            verification_method="Re-run JavaScriptCodeAnalyzer and verify JS_MISSING_TIMEOUT is resolved.",
+        ),
+        "JS_BLOCKING_FS": AutoFixDefinition(
+            rule_id="JS_BLOCKING_FS",
+            name="Replace synchronous fs.*Sync with await fs.promises.*",
+            supported_languages=("javascript", "typescript"),
+            auto_fixable=True,
+            transformation_summary="Rewrites fs.readFileSync/writeFileSync to await fs.promises.readFile/writeFile.",
+            preconditions="Call is inside an async function.",
+            safety_checks="Delimiter balance verification.",
+            verification_method="Re-run JavaScriptCodeAnalyzer and verify JS_BLOCKING_FS is resolved.",
+        ),
+        "JS_UNBALANCED_DELIMITERS": AutoFixDefinition(
+            rule_id="JS_UNBALANCED_DELIMITERS",
+            name="Balance unclosed JavaScript/TypeScript delimiters",
+            supported_languages=("javascript", "typescript"),
+            auto_fixable=True,
+            transformation_summary="Appends missing closing braces or parentheses so the script parses cleanly.",
+            preconditions="Mismatched braces or parentheses in JS/TS source.",
+            safety_checks="Verifies delimiter counts balance to zero.",
+            verification_method="Re-run JavaScriptCodeAnalyzer and verify syntax passes.",
+            unavailable_reason=None,
+        ),
+        # --- Complex recommendations where deterministic Auto Fix is intentionally unavailable ---
+        "PY_UNBOUNDED_RETRY": AutoFixDefinition(
+            rule_id="PY_UNBOUNDED_RETRY",
+            name="Bound simple while True retry loop with max attempts & backoff",
+            supported_languages=("python",),
+            auto_fixable=True,
+            transformation_summary="Rewrites simple 'while True: try: ... except ...: pass' retry loops into bounded 'for _attempt in range(3):' with exponential backoff and logging. Complex multi-statement loops fall back to Auto Fix Unavailable.",
+            preconditions="While loop body is a single try...except statement with straightforward control flow.",
+            safety_checks="Rejects complex loops with multiple statements/nested loops; validates Python AST syntax.",
+            verification_method="Re-run PythonCodeAnalyzer and verify PY_UNBOUNDED_RETRY is resolved.",
+        ),
+        "PY_UNBOUNDED_RETRY_INSPECT": AutoFixDefinition(
+            rule_id="PY_UNBOUNDED_RETRY_INSPECT",
+            name="Bound retry loop lacking maximum attempt limit",
+            supported_languages=("python",),
+            auto_fixable=True,
+            transformation_summary="Rewrites retry loops into bounded 'for _attempt in range(3):' with exponential backoff and logging.",
+            preconditions="While loop body is a try...except statement with retry logic.",
+            safety_checks="AST syntax check, ensures time or asyncio import.",
+            verification_method="Re-run PythonCodeAnalyzer and verify PY_UNBOUNDED_RETRY_INSPECT is resolved.",
+        ),
+        "PY_ASYNC_BLOCKING_HTTP": AutoFixDefinition(
+            rule_id="PY_ASYNC_BLOCKING_HTTP",
+            name="Execute synchronous HTTP request in async background worker thread",
+            supported_languages=("python",),
+            auto_fixable=True,
+            transformation_summary="Rewrites synchronous 'requests.<method>(...)' to 'await asyncio.to_thread(requests.<method>, ...)' and ensures 'import asyncio'.",
+            preconditions="Target call is a synchronous requests invocation inside an async function.",
+            safety_checks="AST syntax check, ensures asyncio import without duplication.",
+            verification_method="Re-run PythonCodeAnalyzer and verify PY_ASYNC_BLOCKING_HTTP is resolved.",
+            unavailable_reason=None,
+        ),
+        "PY_DANGEROUS_EVAL": AutoFixDefinition(
+            rule_id="PY_DANGEROUS_EVAL",
+            name="Replace unsafe eval() with safe ast.literal_eval()",
+            supported_languages=("python",),
+            auto_fixable=True,
+            transformation_summary="Replaces dangerous 'eval(...)' with safe 'ast.literal_eval(...)' and ensures 'import ast'.",
+            preconditions="Invocation of eval() expression.",
+            safety_checks="AST syntax verification, ensures ast import.",
+            verification_method="Re-run PythonCodeAnalyzer and verify PY_DANGEROUS_EVAL is resolved.",
+            unavailable_reason=None,
+        ),
+        "PY_SQL_INJECTION": AutoFixDefinition(
+            rule_id="PY_SQL_INJECTION",
+            name="Parameterize dynamic SQL query",
+            supported_languages=("python",),
+            auto_fixable=True,
+            transformation_summary="Converts string concatenation or f-strings in SQL execution calls into parameterized query placeholders (%s) with parameter tuples.",
+            preconditions="SQL query execution with interpolated string variables.",
+            safety_checks="Validates SQL placeholder structure and Python AST syntax.",
+            verification_method="Re-run PythonCodeAnalyzer and verify PY_SQL_INJECTION is resolved.",
+            unavailable_reason=None,
+        ),
+        "PY_UNSAFE_LOCK": AutoFixDefinition(
+            rule_id="PY_UNSAFE_LOCK",
+            name="Refactor lock.acquire()/release() to 'with lock:' context manager",
+            supported_languages=("python",),
+            auto_fixable=True,
+            transformation_summary="Refactors manual lock.acquire() and lock.release() into a robust 'with lock:' context manager block.",
+            preconditions="Matching lock.acquire() and lock.release() within the same function scope.",
+            safety_checks="AST syntax verification, indentation preservation.",
+            verification_method="Re-run PythonCodeAnalyzer and verify PY_UNSAFE_LOCK is resolved.",
+            unavailable_reason=None,
+        ),
+        "PY_SUBPROCESS_SHELL": AutoFixDefinition(
+            rule_id="PY_SUBPROCESS_SHELL",
+            name="Convert shell=True command to safe argument list using shlex.split()",
+            supported_languages=("python",),
+            auto_fixable=True,
+            transformation_summary="Removes dangerous 'shell=True' and parses command strings safely using 'shlex.split(...)'.",
+            preconditions="Subprocess invocation with shell=True keyword argument.",
+            safety_checks="AST syntax check, ensures shlex import.",
+            verification_method="Re-run PythonCodeAnalyzer and verify PY_SUBPROCESS_SHELL is resolved.",
+            unavailable_reason=None,
+        ),
+        "PY_SYNTAX_ERROR": AutoFixDefinition(
+            rule_id="PY_SYNTAX_ERROR",
+            name="Resolve Python syntax error preventing compilation",
+            supported_languages=("python",),
+            auto_fixable=True,
+            transformation_summary="Repairs missing commas, colons, unclosed delimiters, unterminated strings, or syntax typos so the file compiles cleanly and runs.",
+            preconditions="Unparseable Python source code detected with SyntaxError.",
+            safety_checks="Validates resulting Python code with ast.parse() before applying.",
+            verification_method="Re-run PythonCodeAnalyzer and verify PY_SYNTAX_ERROR is resolved with exit code 0.",
+            unavailable_reason=None,
+        ),
+        "PY_CONST_ZERO_DIV": AutoFixDefinition(
+            rule_id="PY_CONST_ZERO_DIV",
+            name="Fix literal division by zero with safe non-zero divisor",
+            supported_languages=("python",),
+            auto_fixable=True,
+            transformation_summary="Replaces literal division by zero with safe non-zero divisor (1) or safe division expression to eliminate ZeroDivisionError crash.",
+            preconditions="AST BinOp with literal zero divisor.",
+            safety_checks="AST syntax verification.",
+            verification_method="Re-run PythonCodeAnalyzer and verify PY_CONST_ZERO_DIV is resolved.",
+            unavailable_reason=None,
+        ),
+        "PY_UNGUARDED_DIV": AutoFixDefinition(
+            rule_id="PY_UNGUARDED_DIV",
+            name="Add defensive zero-division guard",
+            supported_languages=("python",),
+            auto_fixable=True,
+            transformation_summary="Wraps division expression with a ternary zero-divisor check '(a / b if b != 0 else 0)' to avoid unhandled ZeroDivisionError.",
+            preconditions="Division by variable lacking explicit local zero guard.",
+            safety_checks="AST syntax verification.",
+            verification_method="Re-run PythonCodeAnalyzer and verify PY_UNGUARDED_DIV is resolved.",
+            unavailable_reason=None,
+        ),
+        "PY_UNDEFINED_NAME": AutoFixDefinition(
+            rule_id="PY_UNDEFINED_NAME",
+            name="Define missing name or import standard module",
+            supported_languages=("python",),
+            auto_fixable=True,
+            transformation_summary="Resolves undefined names: corrects common built-in typos (printf->print, true->True), adds missing standard library imports (math, sys, os, etc.), or initializes missing variables with safe default values.",
+            preconditions="Undefined name reported by Ruff or AST symbol analysis.",
+            safety_checks="Validates resulting Python code with ast.parse() and dry-run execution.",
+            verification_method="Re-run PythonCodeAnalyzer and verify PY_UNDEFINED_NAME is resolved.",
+            unavailable_reason=None,
+        ),
+        "PY_MISSING_ARGUMENT": AutoFixDefinition(
+            rule_id="PY_MISSING_ARGUMENT",
+            name="Supply missing function argument or default parameter",
+            supported_languages=("python",),
+            auto_fixable=True,
+            transformation_summary="Supplies default parameter values in function signature (e.g. param=0) or passes required arguments at call sites so execution succeeds.",
+            preconditions="Call site lacks required arguments defined by callee signature.",
+            safety_checks="Validates resulting Python code with ast.parse().",
+            verification_method="Re-run PythonCodeAnalyzer and verify PY_MISSING_ARGUMENT is resolved.",
+            unavailable_reason=None,
+        ),
+        "PY_UNAWAITED_COROUTINE_RETURN": AutoFixDefinition(
+            rule_id="PY_UNAWAITED_COROUTINE_RETURN",
+            name="Await returned coroutine object",
+            supported_languages=("python",),
+            auto_fixable=True,
+            transformation_summary="Ensures returned coroutine is awaited with 'await ...' in async functions.",
+            preconditions="Coroutine returned without await.",
+            safety_checks="AST syntax verification.",
+            verification_method="Re-run PythonCodeAnalyzer and verify PY_UNAWAITED_COROUTINE_RETURN is resolved.",
+            unavailable_reason=None,
+        ),
+        "PY_UNCONTROLLED_LOOP": AutoFixDefinition(
+            rule_id="PY_UNCONTROLLED_LOOP",
+            name="Add loop termination guard or break statement",
+            supported_languages=("python",),
+            auto_fixable=True,
+            transformation_summary="Inserts a break statement or loop counter to prevent infinite iteration.",
+            preconditions="While loop without terminating condition.",
+            safety_checks="AST syntax verification.",
+            verification_method="Re-run PythonCodeAnalyzer and verify PY_UNCONTROLLED_LOOP is resolved.",
+            unavailable_reason=None,
+        ),
+        "JS_UNDEFINED_NAME": AutoFixDefinition(
+            rule_id="JS_UNDEFINED_NAME",
+            name="Declare undefined identifier in JavaScript",
+            supported_languages=("javascript", "typescript"),
+            auto_fixable=False,
+            transformation_summary="Declare or import the missing variable.",
+            preconditions="Identifier undeclared in local or global scope.",
+            safety_checks="N/A",
+            verification_method="Manual edit + re-analysis.",
+            unavailable_reason="Undefined identifier requires variable declaration or import based on business logic.",
+        ),
+        "TS_TYPE_MISMATCH": AutoFixDefinition(
+            rule_id="TS_TYPE_MISMATCH",
+            name="Resolve TypeScript type incompatibility",
+            supported_languages=("typescript",),
+            auto_fixable=False,
+            transformation_summary="Align value type with declared variable or parameter type.",
+            preconditions="Type assignment violates TypeScript type system.",
+            safety_checks="N/A",
+            verification_method="Manual edit + re-analysis.",
+            unavailable_reason="Resolving type mismatches depends on developer intent: either adjust the value or widen the type signature.",
+        ),
+        "C_UNDECLARED_IDENTIFIER": AutoFixDefinition(
+            rule_id="C_UNDECLARED_IDENTIFIER",
+            name="Declare C/C++ identifier or include header",
+            supported_languages=("c", "cpp"),
+            auto_fixable=False,
+            transformation_summary="Include required system header or declare variable.",
+            preconditions="Clang reports use of undeclared identifier.",
+            safety_checks="N/A",
+            verification_method="Manual edit + re-analysis.",
+            unavailable_reason="Undeclared identifier in C/C++ requires including the appropriate header file (e.g. <stdio.h>) or defining the variable.",
+        ),
+    }
+
+    @classmethod
+    def get(cls, rule_id: Optional[str]) -> Optional[AutoFixDefinition]:
+        if not rule_id:
+            return None
+        return cls.DEFINITIONS.get(rule_id)
+
+    @classmethod
+    def list_supported(cls) -> List[Dict[str, object]]:
+        return [d.to_dict() for d in cls.DEFINITIONS.values()]
