@@ -35,18 +35,18 @@ trap cleanup SIGINT SIGTERM EXIT
 
 # 1. Start FastAPI Backend (unless --frontend-only)
 if [ "$1" != "--frontend-only" ]; then
-    echo "[1/2] Starting FastAPI backend on http://127.0.0.1:8000 (auto-reload enabled)..."
+    echo "[1/2] Starting FastAPI backend on http://0.0.0.0:8000 (auto-reload enabled)..."
     export PYTHONPATH="$DIR"
-    python3 -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload --reload-dir backend &
+    python3 -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir backend &
     BACKEND_PID=$!
     sleep 2
 fi
 
 # 2. Start React Frontend (unless --backend-only)
 if [ "$1" != "--backend-only" ]; then
-    echo "[2/2] Starting Vite React frontend on http://localhost:5173..."
+    echo "[2/2] Starting Vite React frontend on http://0.0.0.0:5173..."
     cd "$DIR/frontend"
-    npm run dev -- --host 127.0.0.1 --port 5173 &
+    npm run dev -- --host 0.0.0.0 --port 5173 &
     FRONTEND_PID=$!
 fi
 
