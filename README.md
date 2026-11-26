@@ -385,9 +385,6 @@ cd frontend && npm run build
 InsightX was developed as part of the Master of Science in Data Science Innovation Curriculum at **Dhirubhai Ambani Institute of Information and Communication Technology (DA-IICT)**, Gandhinagar, Gujarat, India.
 
 - **Authors**: Aman Chauhan (`202518004`), Mannan Agarwal (`202518013`)
-- **Research Paper (Markdown)**: [`paper/insightx_research_paper.md`](paper/insightx_research_paper.md)
-- **Publication-Ready PDF**: [`paper/insightx_ieee_paper.pdf`](paper/insightx_ieee_paper.pdf)
-- **Technical Deep-Dive**: [`EXPLANATION.md`](EXPLANATION.md)
 
 ### BibTeX Citation:
 ```bibtex
